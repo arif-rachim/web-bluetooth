@@ -33,9 +33,9 @@ function App() {
         }
     }
     async function getDeviceDetails() {
+
         const device = await navigator.bluetooth.requestDevice({
-            optionalServices: ["battery_service", "device_information"],
-            acceptAllDevices: true,
+            filters : [{namePrefix:"MC330"}]
         });
         setBluetoothDevice(device);
     }
@@ -120,9 +120,11 @@ function App() {
             </ul>
         </Visible>
         <Visible when={hasDevice}>
-            <div>
+            <div className={styles.horizontalGap10}>
                 <label>Device Name</label>
-                {bluetoothDevice?.gatt?.device.name}
+                <div>{bluetoothDevice?.gatt?.device.name}</div>
+                <div>{bluetoothDevice?.id}</div>
+                <div>{bluetoothDevice?.name}</div>
             </div>
             <Visible when={noGattServer}>
                 <Button onClick={wrap(connectToGattServer,'ConnectToGattServer')}>Connect GATT Server</Button>
