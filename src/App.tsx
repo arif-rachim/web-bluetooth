@@ -4,6 +4,7 @@ import {Button} from "./components/Button.tsx";
 import {PropsWithChildren, useState} from "react";
 
 function App() {
+    const [availableDevices,setAvailableDevices] = useState<BluetoothDevice[]|null>(null);
     const [bluetoothDevice, setBluetoothDevice] = useState<BluetoothDevice | null>(null);
     const [remoteGATTServer, setRemoteGATTServer] = useState<BluetoothRemoteGATTServer | null>(null);
     const [battery, setbattery] = useState<BluetoothRemoteGATTService | null>(null);
@@ -16,17 +17,17 @@ function App() {
         const date = new Date().toLocaleTimeString().substring(3,8);
         setMessages(old => ([...old,`[${date}] ${args.join(' ')}`]));
     }
-    function wrap(callback:Function){
+    function wrap(callback:Function,name:string){
         return (...args:any[]) => {
-            log('[start]',callback.name);
+            log('[start]',name);
             try{
                 callback.apply(null,args).then(() => {
-                    log('[succs]',callback.name);
+                    log('[succs]',name);
                 }).catch((err:any) => {
-                    log('[error]',callback.name,':',err.message);
+                    log('[error]',name,':',err.message);
                 });
             }catch(err:any){
-                log('[error]',callback.name,err.message);
+                log('[error]',name,err.message);
             }
 
         }
@@ -66,6 +67,11 @@ function App() {
         setDeviceInfo(infoService);
     }
 
+    async function populateBluetoothDevices() {
+        const devices = await navigator.bluetooth.getDevices();
+        setAvailableDevices(devices)
+    }
+
     const noDevice = bluetoothDevice === null;
     const hasDevice = !noDevice;
     const noGattServer = remoteGATTServer === null;
@@ -76,7 +82,6 @@ function App() {
     const hasDeviceInfo = !noDeviceInfo;
     const noInfoValues = infoValues === null;
     const hasInfoValues = !noInfoValues;
-
     async function checkBatteryPercentage() {
         if (!battery) {
             throw new Error('BatteryInfo is not available')
@@ -104,8 +109,15 @@ function App() {
     return <div className={styles.root}>
         <h1>Bluetooth communication between devices</h1>
         <h5>Prepared by Arif (GAL2729) for demo purpose</h5>
+        <div className={styles.verticalGap10}>
         <Visible when={noDevice}>
-            <Button onClick={wrap(getDeviceDetails)}>Get Device Details</Button>
+            <div className={styles.horizontalGap10}>
+            <Button onClick={wrap(getDeviceDetails,'GetDeviceDetails')}>Get Device Details</Button>
+            <Button onClick={wrap(populateBluetoothDevices,'PopulateBluetoothDevices')}>Populate Bluetooth Devices</Button>
+            </div>
+            <ul>
+                {availableDevices && availableDevices.map(device => <li><i>{device.id}</i> <span style={{fontWeight:'bold'}}>{device.name}</span></li>)}
+            </ul>
         </Visible>
         <Visible when={hasDevice}>
             <div>
@@ -113,25 +125,25 @@ function App() {
                 {bluetoothDevice?.gatt?.device.name}
             </div>
             <Visible when={noGattServer}>
-                <Button onClick={wrap(connectToGattServer)}>Connect GATT Server</Button>
+                <Button onClick={wrap(connectToGattServer,'ConnectToGattServer')}>Connect GATT Server</Button>
             </Visible>
             <Visible when={hasGattServer}>
                 <Button>Disconnect GATT Server</Button>
                 <Visible when={noBatteryInfo}>
-                    <Button onClick={wrap(checkBattery)}>Check Battery</Button>
+                    <Button onClick={wrap(checkBattery,'CheckBattery')}>Check Battery</Button>
                 </Visible>
                 <Visible when={hasBatteryInfo}>
-                    <Button onClick={wrap(checkBatteryPercentage)}>Check Battery Percentage</Button>
+                    <Button onClick={wrap(checkBatteryPercentage,'CheckBatteryPercentage')}>Check Battery Percentage</Button>
                     <div>
                         <label>Battery Level</label>
                         <div>{batteryPercentage}</div>
                     </div>
                 </Visible>
                 <Visible when={noDeviceInfo}>
-                    <Button onClick={wrap(checkDeviceInfo)}>Check Device Info</Button>
+                    <Button onClick={wrap(checkDeviceInfo,'CheckDeviceInfo')}>Check Device Info</Button>
                 </Visible>
                 <Visible when={hasDeviceInfo}>
-                    <Button onClick={wrap(checkDeviceInfoText)}>Check Device Info Text</Button>
+                    <Button onClick={wrap(checkDeviceInfoText,'CheckDeviceInfoText')}>Check Device Info Text</Button>
                 </Visible>
                 <Visible when={hasInfoValues}>
                     <div>
@@ -144,6 +156,7 @@ function App() {
         <ul>
             {messages.map((m,index) => <li key={index}>{m}</li>)}
         </ul>
+        </div>
     </div>
 
 }
